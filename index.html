@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Mini Quiz Interaktif</title>
+  <style>
+    body {
+      margin: 0;
+      background: #101820;
+      color: #fff;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      overflow: hidden;
+    }
+    #container {
+      position: relative;
+      z-index: 2;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      pointer-events: none; /* agar partikel bisa diklik */
+    }
+    #quizBox {
+      background: rgba(20,30,40,0.8);
+      border-radius: 15px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+      padding: 32px 40px;
+      text-align: center;
+      max-width: 350px;
+      pointer-events: auto; /* agar quizBox bisa diklik */
+    }
+    #startBtn {
+      font-size: 1.2em;
+      padding: 14px 36px;
+      margin-top: 24px;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(90deg, #ffb347, #ffcc33);
+      color: #222;
+      cursor: pointer;
+      box-shadow: 0 3px 15px #ffb34744;
+      transition: background .2s, transform .2s;
+    }
+    #startBtn:hover {
+      background: linear-gradient(90deg, #ffe259, #ffa751);
+      transform: scale(1.04);
+    }
+    #loading {
+      display: none;
+      margin-top: 22px;
+      font-size: 1.1em;
+      color: #ffecb3;
+      letter-spacing: 1px;
+    }
+    #jumpscareImg {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      width: 440px;
+      max-width: 94vw;
+      height: auto;
+      transform: translate(-50%, -50%);
+      z-index: 1000;
+      box-shadow: 0 0 60px 15px #f00b;
+      border-radius: 12px;
+      background: #111;
+    }
+    canvas#particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+      pointer-events: none;
+    }
+    @media (max-width: 600px) {
+      #quizBox {padding: 18px 7vw;}
+      #jumpscareImg {width: 96vw;}
+    }
+  </style>
+</head>
+<body>
+  <canvas id="particles"></canvas>
+  <div id="container">
+    <div id="quizBox">
+      <h2>Mini Quiz Interaktif</h2>
+      <p>
+        Selamat datang! Siap untuk memulai mini quiz sederhana? Klik tombol di bawah dan lihat apa yang terjadi!
+      </p>
+      <button id="startBtn">Mulai Quiz</button>
+      <div id="loading">Memproses quiz... <span id="dotAnim"></span></div>
+    </div>
+  </div>
+   <img id="jumpscareImg" src="jumspcre.jpg" alt="Jumpscare">
+  <audio id="kagetSound" src="7415998915570436881.mp3" preload="auto"></audio>
+  <script>
+    // Jumpscare logic
+    const btn = document.getElementById('startBtn');
+    const loading = document.getElementById('loading');
+    const quizBox = document.getElementById('quizBox');
+    const img = document.getElementById('jumpscareImg');
+    const audio = document.getElementById('kagetSound');
+    const container = document.getElementById('container');
+
+    // Dot animation for loading
+    let dotCount = 0, dotInterval = null;
+    function startDotAnim() {
+      const el = document.getElementById('dotAnim');
+      dotInterval = setInterval(() => {
+        dotCount = (dotCount+1)%4;
+        el.textContent = '.'.repeat(dotCount);
+      }, 350);
+    }
+    function stopDotAnim() {
+      clearInterval(dotInterval);
+      document.getElementById('dotAnim').textContent = '';
+    }
+
+    btn.addEventListener('click', function() {
+      btn.style.display = 'none';
+      loading.style.display = 'block';
+      startDotAnim();
+      // Loading effect 2.4 detik, baru jumpscare
+      setTimeout(function() {
+        stopDotAnim();
+        loading.textContent = "Quiz selesai! Menampilkan hasil...";
+        setTimeout(function() {
+          // Jumpscare muncul
+          img.style.display = 'block';
+          audio.currentTime = 0;
+          audio.play();
+          container.style.filter = "blur(4px) brightness(0.7)";
+          setTimeout(function() {
+            img.style.display = 'none';
+            container.style.filter = "";
+            loading.style.display = 'none';
+            quizBox.innerHTML = "<h2>Quiz Selesai!</h2><p>Terima kasih sudah mencoba 😁</p>";
+          }, 1700);
+        }, 1200);
+      }, 2400);
+    });
+
+    // ---------------- Partikel Background ----------------
+    const canvas = document.getElementById('particles');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    let w = window.innerWidth, h = window.innerHeight;
+    function resize() {
+      w = window.innerWidth;
+      h = window.innerHeight;
+      canvas.width = w;
+      canvas.height = h;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    function randBetween(a, b) { return a + Math.random()*(b-a); }
+
+    function createParticle() {
+      const colorList = ['#ffe259', '#ffb347', '#ffa751', '#fff3a2', '#ffd700'];
+      return {
+        x: randBetween(0, w),
+        y: randBetween(-30, h+30),
+        r: randBetween(1.5, 3.8),
+        speed: randBetween(0.4, 1.8),
+        drift: randBetween(-0.5, 0.5),
+        color: colorList[Math.floor(Math.random()*colorList.length)],
+        opacity: randBetween(0.5,1)
+      }
+    }
+
+    function drawParticles() {
+      ctx.clearRect(0,0,w,h);
+      for (let i = 0; i < particles.length; i++) {
+        let p = particles[i];
+        ctx.globalAlpha = p.opacity;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, 2 * Math.PI);
+        ctx.fillStyle = p.color;
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 10;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = 1;
+        p.y += p.speed;
+        p.x += p.drift;
+        // Respawn at top if out of bounds
+        if (p.y > h+30 || p.x < -30 || p.x > w+30) {
+          particles[i] = createParticle();
+          particles[i].y = -10;
+        }
+      }
+    }
+
+    // Init particles
+    for(let i=0; i<60; i++) particles.push(createParticle());
+    function animate() {
+      drawParticles();
+      requestAnimationFrame(animate);
+    }
+    animate();
+  </script>
+</body>
+</html>
